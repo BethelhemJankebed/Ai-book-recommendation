@@ -57,7 +57,7 @@ export default function App() {
     dispatch({ type: "FETCH_START" });
 
     try {
-      const API_KEY = "AIzaSyCLJ_kOVfAZpy3GK0TWpYfYAOMFPV8etXI";
+      const API_KEY = import.meta.env.VITE_API_KEY;
 
       // Gemini models changed; use the current generateContent endpoint
       const res = await fetch(
