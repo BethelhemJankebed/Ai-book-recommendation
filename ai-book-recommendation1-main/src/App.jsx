@@ -1,7 +1,7 @@
-import React, { useReducer, useEffect, useCallback } from "react"
-import SelectField from "./components/Select"
-import genres from "./store/genre.json"
-import moods from "./store/mood.json"
+import React, { useReducer, useEffect, useCallback } from "react";
+import SelectField from "./components/Select";
+import genres from "./store/genre.json";
+import moods from "./store/mood.json";
 
 const initialState = {
   genre: "",
@@ -9,96 +9,104 @@ const initialState = {
   level: "",
   responses: [],
   loading: false,
-  error: null
-}
+  error: null,
+};
 
 function reducer(state, action) {
   switch (action.type) {
     case "SET_GENRE":
-      return { ...state, genre: action.payload, mood: "" }
+      return { ...state, genre: action.payload, mood: "" };
 
     case "SET_MOOD":
-      return { ...state, mood: action.payload }
+      return { ...state, mood: action.payload };
 
     case "SET_LEVEL":
-      return { ...state, level: action.payload }
+      return { ...state, level: action.payload };
 
     case "FETCH_START":
-      return { ...state, loading: true, error: null }
+      return { ...state, loading: true, error: null };
 
     case "FETCH_SUCCESS":
       return {
         ...state,
         loading: false,
-        responses: [...state.responses, action.payload]
-      }
+        responses: [...state.responses, action.payload],
+      };
 
     case "FETCH_ERROR":
-      return { ...state, loading: false, error: action.payload }
+      return { ...state, loading: false, error: action.payload };
 
     default:
-      return state
+      return state;
   }
 }
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, initialState)
-  const { genre, mood, level, responses, loading, error } = state
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { genre, mood, level, responses, loading, error } = state;
 
-  const availableMoods = moods[genre] || []
+  const availableMoods = moods[genre] || [];
 
   useEffect(() => {
-    if (!genre) dispatch({ type: "SET_MOOD", payload: "" })
-  }, [genre])
+    if (!genre) dispatch({ type: "SET_MOOD", payload: "" });
+  }, [genre]);
 
   const fetchRecommendations = useCallback(async () => {
-    if (!genre || !mood || !level) return
+    if (!genre || !mood || !level) return;
 
-    dispatch({ type: "FETCH_START" })
+    dispatch({ type: "FETCH_START" });
 
     try {
-      const API_KEY = "AIzaSyCLJ_kOVfAZpy3GK0TWpYfYAOMFPV8etXI"
+      const API_KEY = "AIzaSyCLJ_kOVfAZpy3GK0TWpYfYAOMFPV8etXI";
 
+      // Gemini models changed; use the current generateContent endpoint
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/text-bison-001:generateMessage?key=${API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: [
+            contents: [
               {
-                author: "user",
-                content: [
+                parts: [
                   {
-                    text: `Recommend 6 books for a ${level} ${genre} reader feeling ${mood}. Explain why.`
-                  }
-                ]
-              }
-            ]
-          })
+                    text: `Recommend 6 books for a ${level} ${genre} reader feeling ${mood}. Explain why.`,
+                  },
+                ],
+              },
+            ],
+          }),
         }
-      )
+      );
 
-      const data = await res.json()
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Gemini error ${res.status}: ${errText}`);
+      }
 
-      // Safe parsing: combine all content parts and candidates
+      const data = await res.json();
+
+      // Extract text from candidates -> content -> parts
       const text = data?.candidates
-        ?.map(c =>
-          c?.content?.map(p => p.text).filter(Boolean).join("\n")
+        ?.map((c) =>
+          c?.content?.parts
+            ?.map((p) => p.text)
+            .filter(Boolean)
+            .join("\n")
         )
         .filter(Boolean)
-        .join("\n")
+        .join("\n");
 
-      if (!text) throw new Error("Empty Gemini response")
+      if (!text) throw new Error("Empty Gemini response");
 
-      dispatch({ type: "FETCH_SUCCESS", payload: text })
+      dispatch({ type: "FETCH_SUCCESS", payload: text });
     } catch (err) {
       dispatch({
         type: "FETCH_ERROR",
-        payload: err.message || "Something went wrong"
-      })
+        payload: err.message || "Something went wrong",
+      });
     }
-  }, [genre, mood, level])
+  }, [genre, mood, level]);
 
   return (
     <section className="max-w-xl mx-auto p-6 space-y-4">
@@ -108,21 +116,21 @@ export default function App() {
         placeholder="Select Genre"
         options={genres}
         value={genre}
-        onSelect={v => dispatch({ type: "SET_GENRE", payload: v })}
+        onSelect={(v) => dispatch({ type: "SET_GENRE", payload: v })}
       />
 
       <SelectField
         placeholder="Select Mood"
         options={availableMoods}
         value={mood}
-        onSelect={v => dispatch({ type: "SET_MOOD", payload: v })}
+        onSelect={(v) => dispatch({ type: "SET_MOOD", payload: v })}
       />
 
       <SelectField
         placeholder="Select Reading Level"
         options={["Beginner", "Intermediate", "Expert"]}
         value={level}
-        onSelect={v => dispatch({ type: "SET_LEVEL", payload: v })}
+        onSelect={(v) => dispatch({ type: "SET_LEVEL", payload: v })}
       />
 
       <button
@@ -142,5 +150,5 @@ export default function App() {
         </details>
       ))}
     </section>
-  )
+  );
 }
