@@ -1,0 +1,12 @@
+{
+  "Fantasy": ["Enchanted", "Epic", "Escapist"],
+  "Science Fiction": ["Curious", "Futuristic", "Existential"],
+  "Mystery": ["Suspenseful", "Intrigued", "Tense"],
+  "Romance": ["Hopeful", "Passionate", "Bittersweet"],
+  "Horror": ["Unsettled", "Terrified"],
+  "Thriller": ["Urgent", "Anxious"],
+  "Historical Fiction": ["Nostalgic", "Immersive"],
+  "Biography": ["Inspired", "Reflective"],
+  "Dystopian": ["Bleak", "Rebellious"],
+  "Poetry": ["Lyrical", "Contemplative"]
+}
